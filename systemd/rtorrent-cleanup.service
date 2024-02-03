@@ -3,4 +3,4 @@ Description=Run rtorrent-cleanup
 
 [Service]
 Type=oneshot
-ExecStart=/usr/local/go/bin/rtorrent-cleanup --wait=1h --skip-ul-speed=1024 http://localhost:8000/RPC2
+ExecStart=/home/user/go/bin/rtorrent-cleanup --wait=1h --skip-ul-speed=1024 http://localhost:8000/RPC2

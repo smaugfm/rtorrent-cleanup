@@ -7,7 +7,6 @@ import (
 	"golang.org/x/time/rate"
 )
 
-// ThrottledTransport Rate Limited HTTP Client
 type ThrottledTransport struct {
 	roundTripperWrap http.RoundTripper
 	ratelimiter      *rate.Limiter
@@ -21,10 +20,6 @@ func (c *ThrottledTransport) RoundTrip(r *http.Request) (*http.Response, error) 
 	return c.roundTripperWrap.RoundTrip(r)
 }
 
-// NewThrottledTransport wraps transportWrap with a rate limitter
-// examle usage:
-// client := http.DefaultClient
-// client.Transport = NewThrottledTransport(10*time.Seconds, 60, http.DefaultTransport) allows 60 requests every 10 seconds
 func NewThrottledTransport(limitPeriod time.Duration, requestCount int, transportWrap http.RoundTripper) http.RoundTripper {
 	return &ThrottledTransport{
 		roundTripperWrap: transportWrap,

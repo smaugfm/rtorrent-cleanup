@@ -29,7 +29,7 @@ func main() {
 		}
 		state, err := cfg.rtorrent.State(context.Background(), torrent)
 		if err != nil {
-			slog.Warn(fmt.Sprintf("Error getting state for torrent %s. Skipping... %v\n", torrent.Name, err))
+			slog.Warn(fmt.Sprintf("Error getting state for torrent %s. Skipping. %v\n", torrent.Name, err))
 			continue
 		}
 		if state == 1 {
@@ -38,7 +38,7 @@ func main() {
 		}
 		stateChanged, err := cfg.rtorrent.StateChanged(context.Background(), torrent)
 		if err != nil {
-			slog.Warn(fmt.Sprintf("Error getting state_changed for torrent %s. Skipping...%v\n", torrent.Name, err))
+			slog.Warn(fmt.Sprintf("Error getting state_changed for torrent %s. Skipping. %v\n", torrent.Name, err))
 		}
 		if !time.Now().After(stateChanged.Add(*cfg.wait)) {
 			// not seeding but not enough time has passed since it closed the torrent
@@ -51,11 +51,12 @@ func main() {
 			if !cfg.dryRun {
 				err := cfg.rtorrent.Delete(context.Background(), torrent)
 				if err != nil {
-					slog.Error("Error deleting torrent %s", torrent.Name)
+					slog.Error(fmt.Sprintf("Error deleting torrent %s. %v", torrent.Name, err))
 				}
 			}
 		} else {
-			slog.Info(fmt.Sprintf("Torrent %s is still seeding at %d KB/s > %d KB/s", torrent.Name, kbs, cfg.skipUlSpeedKbs))
+			slog.Info(fmt.Sprintf("Torrent %s is still seeding at %d KB/s > %d KB/s. Skipping.",
+				torrent.Name, kbs, cfg.skipUlSpeedKbs))
 		}
 	}
 	slog.Info("Done")
@@ -73,9 +74,12 @@ func parseConfig() *Config {
 	flag.Usage = usage
 	username := flag.String("username", "", "HTTP Basic Authentication username")
 	pass := flag.String("password", "", "HTTP Basic Authentication password")
-	wait := flag.Duration("wait", time.Duration(1)*time.Hour, "Minimum duration time after finished torrent is deleted. Defaults to 1h")
-	dryRun := flag.Bool("dry-run", false, "Do not actually delete torrents")
-	skipUlSpeed := flag.Int64("skip-ul-speed", 1024, "Skips torrent deletion if at the time of check it has uploading speed more than in Kb/s. Defaults to 1024KB/s")
+	wait := flag.Duration("wait", time.Duration(1)*time.Hour,
+		"Minimum duration time after which a finished torrent is deleted. Default is 1h")
+	dryRun := flag.Bool("dry-run", false, "Do not actually delete torrents. Default if false")
+	skipUlSpeed := flag.Int64("skip-ul-speed", 0,
+		"Skips torrent deletion if at the time of check the torrent "+
+			"has uploading speed greater than this value (in KB/s). Default is 0, which means skipping this check")
 
 	flag.Parse()
 
