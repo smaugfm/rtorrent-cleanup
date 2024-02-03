@@ -44,19 +44,12 @@ func main() {
 			// not seeding but not enough time has passed since it closed the torrent
 			continue
 		}
-		status, err := cfg.rtorrent.GetStatus(context.Background(), torrent)
-		var kbs = status.UpRate / 1024
-		if int64(kbs) < *cfg.skipUlSpeedKbs {
-			slog.Info(fmt.Sprintf("DELETE   #%02d %s", i+1, torrent.Name))
-			if !cfg.dryRun {
-				err := cfg.rtorrent.Delete(context.Background(), torrent)
-				if err != nil {
-					slog.Error(fmt.Sprintf("Error deleting torrent %s. %v", torrent.Name, err))
-				}
+		slog.Info(fmt.Sprintf("DELETE   #%02d %s", i+1, torrent.Name))
+		if !cfg.dryRun {
+			err := cfg.rtorrent.Delete(context.Background(), torrent)
+			if err != nil {
+				slog.Error(fmt.Sprintf("Error deleting torrent %s. %v", torrent.Name, err))
 			}
-		} else {
-			slog.Info(fmt.Sprintf("Torrent %s is still seeding at %d KB/s > %d KB/s. Skipping.",
-				torrent.Name, kbs, cfg.skipUlSpeedKbs))
 		}
 	}
 	slog.Info("Done")
@@ -64,10 +57,9 @@ func main() {
 }
 
 type Config struct {
-	rtorrent       *rtorrent.Client
-	dryRun         bool
-	wait           *time.Duration
-	skipUlSpeedKbs *int64
+	rtorrent *rtorrent.Client
+	dryRun   bool
+	wait     *time.Duration
 }
 
 func parseConfig() *Config {
@@ -77,9 +69,6 @@ func parseConfig() *Config {
 	wait := flag.Duration("wait", time.Duration(1)*time.Hour,
 		"Minimum duration time after which a finished torrent is deleted. Default is 1h")
 	dryRun := flag.Bool("dry-run", false, "Do not actually delete torrents. Default if false")
-	skipUlSpeed := flag.Int64("skip-ul-speed", 0,
-		"Skips torrent deletion if at the time of check the torrent "+
-			"has uploading speed greater than this value (in KB/s). Default is 0, which means skipping this check")
 
 	flag.Parse()
 
@@ -98,7 +87,7 @@ func parseConfig() *Config {
 	}
 	client := newRtorrentClient(cfg)
 
-	return &Config{client, *dryRun, wait, skipUlSpeed}
+	return &Config{client, *dryRun, wait}
 }
 
 func newRtorrentClient(cfg *rtorrent.Config) *rtorrent.Client {
