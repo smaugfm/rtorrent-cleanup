@@ -1,0 +1,8 @@
+[Unit]
+Description=Run rtorrent-cleanup periodically
+
+[Timer]
+OnUnitActiveSec=10min
+
+[Install]
+WantedBy=timers.target
